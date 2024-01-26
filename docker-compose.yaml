@@ -1,0 +1,17 @@
+services:
+  ollama:
+    hostname: ollama
+    container_name: Tiktokker
+    build: ./
+    command: ollama serve && ollama pull llama2-uncensored
+    volumes:
+      - ollama:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+volumes:
+  ollama:
