@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     musl-dev \
     imagemagick \
+    zstd \
     fonts-liberation\
     && rm -rf /var/lib/apt/lists/*
 
