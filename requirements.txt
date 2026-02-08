@@ -2,9 +2,8 @@ moviepy
 numpy
 langchain
 requests
-shutils
 pytube
 Cython
 dtw-python
 openai-whisper
-whisper-timstamped
+whisper-timestamped
