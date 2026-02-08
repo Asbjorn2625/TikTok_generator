@@ -1,4 +1,6 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
     python3 \
@@ -21,10 +23,13 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation\
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /app
+
+RUN python3 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-WORKDIR /app
 
 COPY app .
 COPY /Configs/policy.xml /etc/ImageMagick-6/policy.xml

@@ -3,7 +3,7 @@ services:
     hostname: ollama
     container_name: Tiktokker
     build: ./
-    command: ollama serve && ollama pull llama2-uncensored
+    command: bash -c "ollama serve & sleep 5 && ollama pull llama2-uncensored && wait"
     volumes:
       - ollama:/app
     deploy:
