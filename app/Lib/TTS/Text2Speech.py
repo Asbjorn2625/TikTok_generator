@@ -103,7 +103,13 @@ def tts(session_id: str, text_speaker: str = "en_us_002", req_text: str = "TikTo
 
 
 def TiktokTTS(voice,text,filename):
-    session_id="6ac7cc4d0863831bec64fcb52a8f2c5b"
+    session_id = os.environ.get("TIKTOK_SESSION_ID")
+    if not session_id:
+        raise RuntimeError(
+            "TIKTOK_SESSION_ID environment variable is not set. "
+            "Log into tiktok.com in your browser, copy the 'sessionid' cookie value, "
+            "and set it as TIKTOK_SESSION_ID (sessions expire periodically and need refreshing)."
+        )
     text_speaker = voice
     req_text = text
     tts(session_id, text_speaker, req_text, filename)

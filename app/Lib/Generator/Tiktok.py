@@ -1,5 +1,6 @@
 import os
-import moviepy.editor as mp
+import moviepy as mp
+from moviepy.video.fx import Crop
 import numpy as np
 import sys
 import shutil
@@ -12,21 +13,20 @@ class TikTok_generator:
         self.prompt = input("What is the subject of your Tiktok?")
 
     def download_video(self) -> None:
-        from pytube import YouTube
-        yt = YouTube(self.url)
+        import yt_dlp
 
-        # Filter streams by file extension and resolution (720p)
-        video_streams = yt.streams.filter(file_extension='mp4', resolution='720p')
+        output_path = f"{os.getcwd()}/{self.filename}.mp4"
+        ydl_opts = {
+            "format": "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best",
+            "outtmpl": output_path,
+            "merge_output_format": "mp4",
+            "quiet": True,
+        }
 
-        if video_streams:
-            # If there is a 720p stream, select the first one
-            stream = video_streams[0]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([self.url])
 
-            # Download the video
-            stream.download(output_path=os.getcwd(), filename=f"{self.filename}.mp4")
-            print(f"Video downloaded successfully in 720p: {self.filename}.mp4")
-        else:
-            print("No 720p version available for this video.")
+        print(f"Video downloaded successfully: {self.filename}.mp4")
 
 
     def crop_video(self) -> None:
@@ -41,8 +41,9 @@ class TikTok_generator:
         new_width = int(og_width * tiktok_aspect_ratio)
 
         # Crop the video to the TikTok aspect ratio
-        cropped_clip = video_clip.crop(x_center=(video_clip.size[0] - new_width) / 2,
-                                       width=new_width)
+        cropped_clip = video_clip.with_effects([
+            Crop(x_center=video_clip.size[0] / 2, width=new_width)
+        ])
 
         # Write the cropped video to a file
         cropped_clip.write_videofile(f"output.mp4", codec="libx264", audio_codec="aac")
@@ -72,23 +73,16 @@ class TikTok_generator:
 
     def generate_audio(self)-> None:
         from Lib.TTS import Text2Speech
-        from langchain.callbacks.manager import CallbackManager
-        from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-        from langchain.llms import Ollama
-        from langchain.prompts import PromptTemplate
-        from langchain.chains import LLMChain
-        
-        llm = Ollama(
-            model="llama2-uncensored",
-            callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]))
+        from langchain_ollama import OllamaLLM
+        from langchain_core.prompts import PromptTemplate
+
+        llm = OllamaLLM(model="llama2-uncensored")
         prompt = PromptTemplate(
             input_variables=["topic"],
             template="Can you tell a short story about {topic} in the format.",
         )
-        chain = LLMChain(llm=llm,
-                        prompt=prompt,
-                        verbose=False)
-        text = chain.run(self.prompt)
+        chain = prompt | llm
+        text = chain.invoke({"topic": self.prompt})
 
         chunks = self.__split_into_chunks(text,200)
         
@@ -117,9 +111,9 @@ class TikTok_generator:
         else:
             randy=10
         
-        final_clip = video_clip.subclip(randy,int((randy+audio_duration)))
+        final_clip = video_clip.subclipped(randy,int((randy+audio_duration)))
 
-        final_clip = final_clip.set_audio(audio_clip)
+        final_clip = final_clip.with_audio(audio_clip)
         os.remove(f"{os.getcwd()}/{self.filename}.mp4")
         
         final_clip.write_videofile(f"{self.filename}.mp4")
@@ -153,7 +147,7 @@ class TikTok_generator:
         start_time, end_time = subtitle[0]
         text = subtitle[1]
         
-        return mp.TextClip(text,font="Nimbus-Sans-L-Bold-Condensed-Italic",fontsize=fontsize, color=color,stroke_color="black",stroke_width=1.1).set_pos(('center', 'center')).set_duration(end_time - start_time).set_start(start_time)
+        return mp.TextClip(font="/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",text=text,font_size=fontsize, color=color,stroke_color="black",stroke_width=1.1).with_position(('center', 'center')).with_duration(end_time - start_time).with_start(start_time)
     # Function to add subtitles to video
     def add_subtitles(self):
         video_clip = mp.VideoFileClip(f"{os.getcwd()}/{self.filename}.mp4")

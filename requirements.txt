@@ -1,8 +1,9 @@
 moviepy
 numpy
-langchain
+langchain-core
+langchain-ollama
 requests
-pytube
+yt-dlp
 Cython
 dtw-python
 openai-whisper
